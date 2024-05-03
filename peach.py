@@ -1,10 +1,15 @@
 import speech_recognition as sr
 from openai import OpenAI
 import pyttsx3
+import matplotlib.pyplot as plt
 import os
 import time
 import random
 import pygame
+import io
+import numpy as np
+import soundfile as sf
+
 
 client = OpenAI(api_key = "")
 
@@ -29,6 +34,7 @@ def listen_microphone():
         print(f"Sorry, an error occurred. {e}")
         return ""
 
+
 def query_chatgpt(prompt):
     response = client.completions.create(
       model="gpt-3.5-turbo-instruct",
@@ -41,6 +47,7 @@ def query_chatgpt(prompt):
     )
     return response.choices[0].text.strip()
 
+
 def speak_text(text, rate=0.3):
     engine = pyttsx3.init()
     newVoiceRate = 185
@@ -48,9 +55,21 @@ def speak_text(text, rate=0.3):
     engine.say(text)
     engine.runAndWait()
 
+
+def visualize_audio_terminal(filename):
+    data, samplerate = sf.read(filename)
+    # Normalize data to fit within terminal width
+    normalized_data = data / np.max(np.abs(data)) * (os.get_terminal_size().columns - 2)
+    while True:
+        for i in range(len(normalized_data)):
+            print('|' * int(normalized_data[i]))
+        if not pygame.mixer.music.get_busy():
+            break
+        time.sleep(0.1) 
+
+
 def main():
     pygame.mixer.init()
-    
     while True:
         print("Please speak:")
         query = listen_microphone()
@@ -66,8 +85,7 @@ def main():
 
         pygame.mixer.music.load("speech.mp3")
         pygame.mixer.music.play()
-
-        # Wait for the mp3 to finish playing
+        visualize_audio_terminal("speech.mp3")
         while pygame.mixer.music.get_busy():
             continue
 
